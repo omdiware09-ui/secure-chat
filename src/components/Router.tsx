@@ -2,6 +2,12 @@ import { MemberProvider } from '@/integrations';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { ScrollToTop } from '@/lib/scroll-to-top';
 import ErrorPage from '@/integrations/errorHandlers/ErrorPage';
+import HomePage from '@/components/pages/HomePage';
+import FeaturesPage from '@/components/pages/FeaturesPage';
+import DesignPreviewPage from '@/components/pages/DesignPreviewPage';
+import LoginPage from '@/components/pages/LoginPage';
+import SignupPage from '@/components/pages/SignupPage';
+import VaultPinPage from '@/components/pages/VaultPinPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -21,9 +27,44 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <div>Wix Vibe</div>,
+        element: <HomePage />,
         routeMetadata: {
           pageIdentifier: 'home',
+        },
+      },
+      {
+        path: "features",
+        element: <FeaturesPage />,
+        routeMetadata: {
+          pageIdentifier: 'features',
+        },
+      },
+      {
+        path: "design",
+        element: <DesignPreviewPage />,
+        routeMetadata: {
+          pageIdentifier: 'design',
+        },
+      },
+      {
+        path: "login",
+        element: <LoginPage />,
+        routeMetadata: {
+          pageIdentifier: 'login',
+        },
+      },
+      {
+        path: "signup",
+        element: <SignupPage />,
+        routeMetadata: {
+          pageIdentifier: 'signup',
+        },
+      },
+      {
+        path: "vault-pin",
+        element: <VaultPinPage />,
+        routeMetadata: {
+          pageIdentifier: 'vault-pin',
         },
       },
       {
