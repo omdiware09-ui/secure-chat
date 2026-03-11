@@ -16,14 +16,23 @@ export default function VaultPinPage() {
     // Detect tab visibility changes - lock vault if tab becomes hidden
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // In real implementation, this would clear session and redirect to login
-        console.log('Tab hidden - vault would be locked');
+        // Clear vault session and redirect to home
+        sessionStorage.removeItem('vaultUnlocked');
+        navigate('/');
       }
     };
 
+    const handleBeforeUnload = () => {
+      sessionStorage.removeItem('vaultUnlocked');
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +62,8 @@ export default function VaultPinPage() {
       await new Promise(resolve => setTimeout(resolve, 800));
 
       // On success, navigate to chat interface
+      // Store vault unlock time for session management
+      sessionStorage.setItem('vaultUnlocked', new Date().toISOString());
       navigate('/chat');
     } catch (err) {
       setAttempts(prev => prev + 1);

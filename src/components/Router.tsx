@@ -8,6 +8,7 @@ import DesignPreviewPage from '@/components/pages/DesignPreviewPage';
 import LoginPage from '@/components/pages/LoginPage';
 import SignupPage from '@/components/pages/SignupPage';
 import VaultPinPage from '@/components/pages/VaultPinPage';
+import ChatPage from '@/components/pages/ChatPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
@@ -65,6 +66,13 @@ const router = createBrowserRouter([
         element: <VaultPinPage />,
         routeMetadata: {
           pageIdentifier: 'vault-pin',
+        },
+      },
+      {
+        path: "chat",
+        element: <ChatPage />,
+        routeMetadata: {
+          pageIdentifier: 'chat',
         },
       },
       {

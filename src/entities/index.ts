@@ -4,6 +4,29 @@
  */
 
 /**
+ * Collection ID: chats
+ * Interface for Chats
+ */
+export interface Chats {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  chatName?: string;
+  /** @wixFieldType boolean */
+  pinEnabled?: boolean;
+  /** @wixFieldType number */
+  pinCode?: number;
+  /** @wixFieldType text */
+  participantIdentifiers?: string;
+  /** @wixFieldType datetime */
+  lastActivityDate?: Date | string;
+  /** @wixFieldType boolean */
+  isGroupChat?: boolean;
+}
+
+
+/**
  * Collection ID: interfacepreviews
  * Interface for InterfacePreviews
  */
@@ -23,6 +46,29 @@ export interface InterfacePreviews {
   displayOrder?: number;
   /** @wixFieldType boolean */
   darkModeEnabled?: boolean;
+}
+
+
+/**
+ * Collection ID: messages
+ * Interface for Messages
+ */
+export interface Messages {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  chatId?: string;
+  /** @wixFieldType text */
+  senderId?: string;
+  /** @wixFieldType text */
+  encryptedContent?: string;
+  /** @wixFieldType datetime */
+  timestamp?: Date | string;
+  /** @wixFieldType boolean */
+  isRead?: boolean;
+  /** @wixFieldType boolean */
+  isDecrypted?: boolean;
 }
 
 
@@ -67,4 +113,27 @@ export interface SecurityFeatures {
   requiresPin?: boolean;
   /** @wixFieldType boolean */
   hasSelfDestruct?: boolean;
+}
+
+
+/**
+ * Collection ID: userprofiles
+ * Interface for UserProfiles
+ */
+export interface UserProfiles {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  username?: string;
+  /** @wixFieldType text */
+  displayName?: string;
+  /** @wixFieldType image - Contains image URL, render with <Image> component, NOT as text */
+  profilePicture?: string;
+  /** @wixFieldType text */
+  aboutMe?: string;
+  /** @wixFieldType datetime */
+  lastOnline?: Date | string;
+  /** @wixFieldType boolean */
+  isSearchable?: boolean;
 }
