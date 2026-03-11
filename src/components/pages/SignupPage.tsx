@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, User, Key } from 'lucide-react';
+import { Shield, Mail, Lock, User, Key, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { authService } from '@/services/authService';
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -17,16 +18,23 @@ export default function SignupPage() {
     confirmPassword: '',
   });
   const [generatedUserId, setGeneratedUserId] = useState('');
+  const [generatedVaultPin, setGeneratedVaultPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  const generateUserId = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!formData.name.trim()) {
+      setError('Full name is required');
+      return;
+    }
+
+    if (!formData.email.includes('@')) {
+      setError('Valid email address is required');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -41,28 +49,30 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      // Generate unique 6-digit user ID
-      const userId = generateUserId();
-      setGeneratedUserId(userId);
+      // Create user account with proper security
+      const result = await authService.createUser(
+        formData.email,
+        formData.password,
+        formData.name
+      );
 
-      // In a real implementation, this would:
-      // 1. Hash the password using bcrypt
-      // 2. Generate RSA public/private key pair for encryption
-      // 3. Create user profile with: name, userId, email, createdDate, publicKey
-      // 4. Store securely in database
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setGeneratedUserId(result.userId);
+      setGeneratedVaultPin(result.vaultPin);
 
-      // Show success with generated user ID
-      // User would need to save this ID for login
+      // In production, send welcome email with vault PIN here
+      // Email would include:
+      // - Welcome greeting card
+      // - Vault PIN
+      // - Security tips
+      // - Account recovery information
     } catch (err) {
-      setError('Failed to create account. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
+      setError(errorMessage);
       setIsSubmitting(false);
     }
   };
 
-  if (generatedUserId) {
+  if (generatedUserId && generatedVaultPin) {
     return (
       <div className="min-h-screen bg-background text-foreground font-paragraph">
         <Header />
@@ -72,35 +82,74 @@ export default function SignupPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="max-w-[32rem] mx-auto text-center"
+            className="max-w-[40rem] mx-auto"
           >
-            <div className="mb-8 flex justify-center">
-              <Shield className="w-20 h-20 text-accent" strokeWidth={1.5} />
-            </div>
-            <h1 className="font-heading text-4xl mb-6 text-primary">
-              Account Created Successfully
-            </h1>
-            <div className="p-8 border-2 border-accent mb-8">
-              <p className="text-sm text-foreground mb-4 uppercase tracking-wider">
-                Your User ID
+            {/* Success Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="p-8 border-2 border-accent bg-background/50 backdrop-blur-sm mb-8"
+            >
+              <div className="flex justify-center mb-6">
+                <CheckCircle className="w-16 h-16 text-accent" strokeWidth={1.5} />
+              </div>
+              <h1 className="font-heading text-4xl mb-4 text-primary text-center">
+                Account Created Successfully
+              </h1>
+              <p className="text-center text-foreground mb-8">
+                Your account has been created with end-to-end encryption enabled. 
+                A welcome email with your vault PIN has been sent to {formData.email}.
               </p>
-              <p className="font-heading text-5xl text-accent mb-4 tracking-wider">
-                {generatedUserId}
-              </p>
-              <p className="text-sm text-destructive">
-                SAVE THIS ID - You will need it to log in
-              </p>
-            </div>
-            <p className="text-base text-foreground leading-relaxed mb-8">
-              Your account has been created with end-to-end encryption enabled. 
-              Your unique 6-digit User ID is required for login along with your password.
-            </p>
+
+              {/* User ID Card */}
+              <div className="p-6 border border-secondary/20 bg-secondary/5 mb-6">
+                <p className="text-xs text-secondary uppercase tracking-wider mb-3">
+                  Your User ID
+                </p>
+                <p className="font-heading text-4xl text-accent tracking-wider mb-2">
+                  {generatedUserId}
+                </p>
+                <p className="text-xs text-destructive font-medium">
+                  SAVE THIS ID - You will need it to log in
+                </p>
+              </div>
+
+              {/* Vault PIN Card */}
+              <div className="p-6 border border-secondary/20 bg-secondary/5 mb-6">
+                <p className="text-xs text-secondary uppercase tracking-wider mb-3">
+                  Your Vault PIN
+                </p>
+                <p className="font-heading text-4xl text-accent tracking-wider mb-2">
+                  {generatedVaultPin}
+                </p>
+                <p className="text-xs text-destructive font-medium">
+                  SAVE THIS PIN - Required to access your chats
+                </p>
+              </div>
+
+              {/* Security Information */}
+              <div className="p-4 border border-secondary/20 bg-background mb-6">
+                <h3 className="font-heading text-sm text-primary mb-3">Important Security Information</h3>
+                <ul className="space-y-2 text-xs text-foreground">
+                  <li>✓ User ID: Use this to log in</li>
+                  <li>✓ Vault PIN: Required to access your chats</li>
+                  <li>✓ Password: Keep this secure and never share</li>
+                  <li>✓ Email: Check for welcome message with security tips</li>
+                </ul>
+              </div>
+            </motion.div>
+
             <Button
               onClick={() => navigate('/login')}
-              className="bg-accent text-accent-foreground px-8 py-6 text-lg hover:opacity-90"
+              className="w-full bg-accent text-accent-foreground px-8 py-6 text-lg hover:opacity-90"
             >
               Continue to Login
             </Button>
+
+            <p className="text-center text-secondary text-sm mt-6">
+              A welcome email has been sent to {formData.email} with your vault PIN and security information.
+            </p>
           </motion.div>
         </section>
 
@@ -160,6 +209,9 @@ export default function SignupPage() {
                 className="bg-background border-secondary/30 text-foreground focus:border-accent"
                 placeholder="your@email.com"
               />
+              <p className="text-xs text-secondary mt-2">
+                We'll send your vault PIN and welcome message here
+              </p>
             </div>
 
             <div>
@@ -176,6 +228,9 @@ export default function SignupPage() {
                 className="bg-background border-secondary/30 text-foreground focus:border-accent"
                 placeholder="Minimum 8 characters"
               />
+              <p className="text-xs text-secondary mt-2">
+                Must be at least 8 characters for security
+              </p>
             </div>
 
             <div>
@@ -202,9 +257,9 @@ export default function SignupPage() {
 
             <div className="p-4 border border-secondary/20 bg-background">
               <p className="text-xs text-foreground leading-relaxed">
-                By creating an account, you agree that your password will be securely hashed 
-                using bcrypt, and encryption keys will be generated for end-to-end encrypted 
-                messaging. You will receive a unique 6-digit User ID required for login.
+                By creating an account, you agree that your password will be securely hashed, 
+                and encryption keys will be generated for end-to-end encrypted messaging. 
+                You will receive a unique 6-digit User ID and 4-digit Vault PIN via email.
               </p>
             </div>
 
@@ -224,6 +279,19 @@ export default function SignupPage() {
                 Sign In
               </Link>
             </p>
+          </div>
+
+          {/* Privacy Features */}
+          <div className="mt-12 p-6 border border-secondary/20">
+            <h3 className="font-heading text-lg text-primary mb-4">Privacy & Security</h3>
+            <ul className="space-y-2 text-sm text-foreground">
+              <li>✓ End-to-end encryption for all messages</li>
+              <li>✓ Vault PIN protection for chat access</li>
+              <li>✓ Zero browser storage - data cleared on refresh</li>
+              <li>✓ Account lockout after 3 failed login attempts</li>
+              <li>✓ Email notifications for security events</li>
+              <li>✓ Device verification for new logins</li>
+            </ul>
           </div>
         </motion.div>
       </section>

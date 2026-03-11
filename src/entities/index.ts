@@ -124,6 +124,8 @@ export interface UserProfiles {
   _id: string;
   _createdDate?: Date;
   _updatedDate?: Date;
+  /** @wixFieldType boolean */
+  receiveSecurityEmails?: boolean;
   /** @wixFieldType text */
   username?: string;
   /** @wixFieldType text */

@@ -32,6 +32,14 @@ export default function Header() {
             Design Preview
           </Link>
           <Link
+            to="/privacy"
+            className={`font-paragraph text-base transition-colors ${
+              isActive('/privacy') ? 'text-accent' : 'text-foreground hover:text-primary'
+            }`}
+          >
+            Privacy
+          </Link>
+          <Link
             to="/login"
             className="bg-transparent text-primary border border-primary px-6 py-3 text-base font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
             style={{ borderRadius: '4px' }}

@@ -28,6 +28,9 @@ export default function Footer() {
               <Link to="/design" className="text-base text-foreground hover:text-accent transition-colors">
                 Design Preview
               </Link>
+              <Link to="/privacy" className="text-base text-foreground hover:text-accent transition-colors">
+                Privacy
+              </Link>
               <Link to="/signup" className="text-base text-foreground hover:text-accent transition-colors">
                 Create Account
               </Link>

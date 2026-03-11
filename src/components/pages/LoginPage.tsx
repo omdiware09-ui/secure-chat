@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Lock, Hash } from 'lucide-react';
+import { Shield, Lock, Hash, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { authService } from '@/services/authService';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -16,40 +17,42 @@ export default function LoginPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [attempts, setAttempts] = useState(0);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
 
     if (formData.userId.length !== 6 || !/^\d+$/.test(formData.userId)) {
       setError('User ID must be a 6-digit number');
       return;
     }
 
-    if (attempts >= 5) {
-      setError('Account temporarily locked. Please try again later or use email recovery.');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // In a real implementation, this would:
-      // 1. Verify userId exists in database
-      // 2. Compare password hash using bcrypt
-      // 3. Check device verification (new device requires email confirmation)
-      // 4. Create secure session token
-      // 5. Rate limit login attempts
+      // Authenticate user with proper password validation
+      const user = await authService.loginUser(formData.userId, formData.password);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // On successful login, redirect to vault PIN entry
-      navigate('/vault-pin');
+      // Store user session
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      sessionStorage.setItem('userEmail', user.email);
+      
+      setSuccessMessage('Login successful! Redirecting...');
+      
+      // Redirect to vault PIN entry after brief delay
+      setTimeout(() => {
+        navigate('/vault-pin');
+      }, 500);
     } catch (err) {
-      setAttempts(prev => prev + 1);
-      setError(`Invalid User ID or password. ${5 - attempts - 1} attempts remaining.`);
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
       setIsSubmitting(false);
     }
   };
@@ -87,7 +90,7 @@ export default function LoginPage() {
                 id="userId"
                 type="text"
                 value={formData.userId}
-                onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, userId: e.target.value.replace(/\D/g, '').slice(0, 6) })}
                 required
                 maxLength={6}
                 className="bg-background border-secondary/30 text-foreground focus:border-accent font-heading text-2xl tracking-wider text-center"
@@ -110,34 +113,33 @@ export default function LoginPage() {
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 required
                 className="bg-background border-secondary/30 text-foreground focus:border-accent"
-                placeholder="Enter your password"
+                placeholder="Enter your password (min 8 characters)"
               />
             </div>
 
             {error && (
-              <div className="p-4 border border-destructive/30 bg-destructive/10">
+              <div className="p-4 border border-destructive/30 bg-destructive/10 flex gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" strokeWidth={1.5} />
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
 
-            {attempts >= 3 && attempts < 5 && (
+            {successMessage && (
               <div className="p-4 border border-accent/30 bg-accent/10">
-                <p className="text-sm text-accent">
-                  Warning: Account will be temporarily locked after {5 - attempts} more failed attempts.
-                </p>
+                <p className="text-sm text-accent">{successMessage}</p>
               </div>
             )}
 
             <div className="p-4 border border-secondary/20 bg-background">
               <p className="text-xs text-foreground leading-relaxed">
                 After successful login, you will be prompted to enter your secure chat vault PIN 
-                before accessing your conversations. New device logins require email verification.
+                before accessing your conversations. Account lockout: 3 failed attempts = 10 minute block.
               </p>
             </div>
 
             <Button
               type="submit"
-              disabled={isSubmitting || attempts >= 5}
+              disabled={isSubmitting}
               className="w-full bg-accent text-accent-foreground py-6 text-lg hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? 'Signing In...' : 'Sign In'}
@@ -145,9 +147,6 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 space-y-4 text-center">
-            <Link to="/forgot-password" className="block text-base text-accent hover:underline">
-              Forgot Password?
-            </Link>
             <p className="text-base text-foreground">
               Don't have an account?{' '}
               <Link to="/signup" className="text-accent hover:underline">
@@ -159,10 +158,11 @@ export default function LoginPage() {
           <div className="mt-12 p-6 border border-secondary/20">
             <h3 className="font-heading text-lg text-primary mb-4">Security Features</h3>
             <ul className="space-y-2 text-sm text-foreground">
-              <li>• Rate limiting prevents brute-force attacks</li>
-              <li>• Device verification for new logins</li>
-              <li>• Temporary lockout after failed attempts</li>
-              <li>• Email recovery for forgotten credentials</li>
+              <li>• Account lockout after 3 failed login attempts</li>
+              <li>• 10-minute temporary block with email notification</li>
+              <li>• Password must be at least 8 characters</li>
+              <li>• Vault PIN required after successful login</li>
+              <li>• Email verification for new device logins</li>
             </ul>
           </div>
         </motion.div>

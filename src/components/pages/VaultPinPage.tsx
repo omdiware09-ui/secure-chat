@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Lock } from 'lucide-react';
+import { Shield, Lock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { authService } from '@/services/authService';
 
 export default function VaultPinPage() {
   const navigate = useNavigate();
@@ -11,19 +12,28 @@ export default function VaultPinPage() {
   const [attempts, setAttempts] = useState(0);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
+    // Get current user from session
+    const userSession = sessionStorage.getItem('currentUser');
+    if (userSession) {
+      setCurrentUser(JSON.parse(userSession));
+    }
+
     // Detect tab visibility changes - lock vault if tab becomes hidden
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // Clear vault session and redirect to home
         sessionStorage.removeItem('vaultUnlocked');
+        sessionStorage.removeItem('currentUser');
         navigate('/');
       }
     };
 
     const handleBeforeUnload = () => {
       sessionStorage.removeItem('vaultUnlocked');
+      sessionStorage.removeItem('currentUser');
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -45,29 +55,31 @@ export default function VaultPinPage() {
 
     if (attempts >= 3) {
       setError('Too many failed attempts. Redirecting to login...');
-      setTimeout(() => navigate('/login'), 2000);
+      setTimeout(() => {
+        sessionStorage.removeItem('vaultUnlocked');
+        sessionStorage.removeItem('currentUser');
+        navigate('/login');
+      }, 2000);
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // In a real implementation, this would:
-      // 1. Verify PIN hash against stored vault PIN
-      // 2. Limited attempts (3-5) before locking
-      // 3. On success, load encrypted chat list
-      // 4. Establish secure WebSocket connection
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // On success, navigate to chat interface
-      // Store vault unlock time for session management
-      sessionStorage.setItem('vaultUnlocked', new Date().toISOString());
-      navigate('/chat');
+      // Verify vault PIN
+      if (currentUser) {
+        await authService.verifyVaultPin(currentUser.userId, pin);
+        
+        // On success, navigate to chat interface
+        // Store vault unlock time for session management
+        sessionStorage.setItem('vaultUnlocked', new Date().toISOString());
+        navigate('/chat');
+      }
     } catch (err) {
-      setAttempts(prev => prev + 1);
-      setError(`Incorrect PIN. ${3 - attempts - 1} attempts remaining.`);
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      const remaining = 3 - newAttempts;
+      setError(`Incorrect PIN. ${remaining} attempts remaining.`);
       setIsSubmitting(false);
       setPin('');
     }
@@ -107,8 +119,9 @@ export default function VaultPinPage() {
           </div>
 
           {error && (
-            <div className="p-4 border border-destructive/30 bg-destructive/10">
-              <p className="text-sm text-destructive text-center">{error}</p>
+            <div className="p-4 border border-destructive/30 bg-destructive/10 flex gap-3">
+              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+              <p className="text-sm text-destructive text-center flex-1">{error}</p>
             </div>
           )}
 
