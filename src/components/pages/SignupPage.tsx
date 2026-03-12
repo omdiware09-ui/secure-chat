@@ -44,6 +44,17 @@ export default function SignupPage() {
       return;
     }
 
+    if (formData.userId.length > 30) {
+      setError('User ID must be no more than 30 characters');
+      return;
+    }
+
+    const instagramLikePattern = /^[a-zA-Z0-9_.]+$/;
+    if (!instagramLikePattern.test(formData.userId)) {
+      setError('User ID can only contain letters, numbers, underscores, and periods');
+      return;
+    }
+
     if (!userIdAvailable) {
       setError('Please check if your User ID is available first');
       return;
@@ -99,6 +110,17 @@ export default function SignupPage() {
 
     if (formData.userId.length < 3) {
       setError('User ID must be at least 3 characters');
+      return;
+    }
+
+    if (formData.userId.length > 30) {
+      setError('User ID must be no more than 30 characters');
+      return;
+    }
+
+    const instagramLikePattern = /^[a-zA-Z0-9_.]+$/;
+    if (!instagramLikePattern.test(formData.userId)) {
+      setError('User ID can only contain letters, numbers, underscores, and periods');
       return;
     }
 
@@ -269,7 +291,7 @@ export default function SignupPage() {
                 </Button>
               </div>
               <p className="text-xs text-secondary mt-2">
-                Your User ID is unique and used to log in. You cannot change it later.
+                Your User ID is unique and used to log in. You cannot change it later. Use letters, numbers, underscores, and periods only (3-30 characters).
               </p>
               {userIdAvailable === true && (
                 <p className="text-xs text-accent mt-2">✓ This User ID is available!</p>

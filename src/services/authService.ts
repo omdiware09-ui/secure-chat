@@ -36,13 +36,25 @@ export const generateVaultPin = (): string => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
+// Validate user ID format (Instagram-like: alphanumeric, underscores, periods)
+const validateUserIdFormat = (userId: string): boolean => {
+  const instagramLikePattern = /^[a-zA-Z0-9_.]+$/;
+  return instagramLikePattern.test(userId);
+};
+
 export const authService = {
   async checkUserIdAvailability(userId: string): Promise<boolean> {
-    // Check if user ID already exists in localStorage
+    // Validate format first
+    if (!validateUserIdFormat(userId)) {
+      throw new Error('User ID can only contain letters, numbers, underscores, and periods');
+    }
+
+    // Check if user ID already exists in localStorage (case-insensitive)
+    const normalizedUserId = userId.toLowerCase();
     const users = Object.values(localStorage).filter((item) => {
       try {
         const user = JSON.parse(item as string);
-        return user.userId === userId;
+        return user.userId.toLowerCase() === normalizedUserId;
       } catch {
         return false;
       }
@@ -54,6 +66,14 @@ export const authService = {
     // Validate user ID format
     if (!userId || userId.length < 3) {
       throw new Error('User ID must be at least 3 characters');
+    }
+
+    if (userId.length > 30) {
+      throw new Error('User ID must be no more than 30 characters');
+    }
+
+    if (!validateUserIdFormat(userId)) {
+      throw new Error('User ID can only contain letters, numbers, underscores, and periods');
     }
 
     // Check if user ID is available
@@ -100,11 +120,12 @@ export const authService = {
   },
 
   async loginUser(userId: string, password: string) {
-    // Find user by userId
+    // Find user by userId (case-insensitive)
+    const normalizedUserId = userId.toLowerCase();
     const users = Object.values(localStorage).filter((item) => {
       try {
         const user = JSON.parse(item as string);
-        return user.userId === userId;
+        return user.userId.toLowerCase() === normalizedUserId;
       } catch {
         return false;
       }
@@ -162,10 +183,12 @@ export const authService = {
   },
 
   async getUserByUserId(userId: string) {
+    // Find user by userId (case-insensitive)
+    const normalizedUserId = userId.toLowerCase();
     const users = Object.values(localStorage).filter((item) => {
       try {
         const user = JSON.parse(item as string);
-        return user.userId === userId;
+        return user.userId.toLowerCase() === normalizedUserId;
       } catch {
         return false;
       }
