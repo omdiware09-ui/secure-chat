@@ -14,7 +14,7 @@ Silent Sanctuary is deployed globally on Cloudflare's edge network, ensuring:
 ## 🔐 Security Features
 
 ### Authentication & Account Protection
-- ✅ **Secure Login**: 6-digit User ID + password authentication
+- ✅ **Secure Login**: Unique User ID (alphanumeric with symbols) + password authentication
 - ✅ **Account Lockout**: 3 failed attempts = 10-minute block
 - ✅ **Email Notifications**: Security alerts for all account events
 - ✅ **Vault PIN**: 4-digit PIN for chat access (sent via email)
@@ -39,7 +39,7 @@ Silent Sanctuary is deployed globally on Cloudflare's edge network, ensuring:
 ### Welcome Email
 When you create an account, you receive:
 - Modern greeting card design
-- Your 6-digit User ID
+- Your unique User ID (alphanumeric with symbols and digits)
 - Your 4-digit Vault PIN
 - Security tips and best practices
 - Account recovery information
@@ -97,13 +97,13 @@ npm run dev
 2. Enter your name, email, and password (min 8 characters)
 3. Confirm password
 4. Check your email for:
-   - Your 6-digit User ID
+   - Your unique User ID
    - Your 4-digit Vault PIN
    - Welcome message with security tips
 
 ### Logging In
 
-1. Enter your 6-digit User ID
+1. Enter your unique User ID
 2. Enter your password
 3. Enter your 4-digit Vault PIN
 4. Access your secure chats

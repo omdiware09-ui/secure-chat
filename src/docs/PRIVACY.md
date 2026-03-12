@@ -8,7 +8,7 @@ Silent Sanctuary is committed to protecting your privacy. This Privacy Policy ex
 
 ### Essential Information
 - Email address (for account recovery and notifications)
-- User ID (6-digit identifier for login)
+- User ID (unique alphanumeric identifier with symbols and digits for login)
 - Password hash (never stored in plaintext)
 - Vault PIN hash (for chat access)
 - Account creation date

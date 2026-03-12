@@ -39,21 +39,23 @@ export const generateVaultPin = (): string => {
 // Generate unique user ID with at least 5 alphabets, 1 symbol, and 2 digits
 export const generateUniqueUserId = (): string => {
   const alphabets = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const symbols = ['_', '-', '.', '#'];
+  const symbols = ['_', '-', '.', '#', '@', '!', '~'];
   const digits = '0123456789';
   
   let userId = '';
   
-  // Add 5 random alphabets
-  for (let i = 0; i < 5; i++) {
+  // Add 5+ random alphabets (5-7 for variety)
+  const alphabetCount = 5 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < alphabetCount; i++) {
     userId += alphabets.charAt(Math.floor(Math.random() * alphabets.length));
   }
   
   // Add 1 random symbol
   userId += symbols[Math.floor(Math.random() * symbols.length)];
   
-  // Add 2 random digits
-  for (let i = 0; i < 2; i++) {
+  // Add 2+ random digits (2-3 for variety)
+  const digitCount = 2 + Math.floor(Math.random() * 2);
+  for (let i = 0; i < digitCount; i++) {
     userId += digits.charAt(Math.floor(Math.random() * digits.length));
   }
   
@@ -63,9 +65,9 @@ export const generateUniqueUserId = (): string => {
 
 // Validate user ID format (auto-generated: alphanumeric, symbols, digits)
 const validateUserIdFormat = (userId: string): boolean => {
-  const pattern = /^[a-zA-Z0-9_\-.#]+$/;
+  const pattern = /^[a-zA-Z0-9_\-.#@!~]+$/;
   const hasAlphabets = /[a-zA-Z]/.test(userId);
-  const hasSymbol = /[_\-.#]/.test(userId);
+  const hasSymbol = /[_\-.#@!~]/.test(userId);
   const hasDigits = /\d/.test(userId);
   return pattern.test(userId) && hasAlphabets && hasSymbol && hasDigits;
 };
@@ -241,7 +243,7 @@ export const authService = {
         // Create system user if doesn't exist
         xepxUser = {
           _id: crypto.randomUUID(),
-          userId: '000000',
+          userId: 'xepx_system_001',
           email: 'system@xepx.io',
           displayName: 'xepx',
           username: 'xepx',
