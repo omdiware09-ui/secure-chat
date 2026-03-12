@@ -27,6 +27,27 @@ export interface Chats {
 
 
 /**
+ * Collection ID: friendrequests
+ * Interface for FriendRequests
+ */
+export interface FriendRequests {
+  _id: string;
+  _createdDate?: Date;
+  _updatedDate?: Date;
+  /** @wixFieldType text */
+  senderId?: string;
+  /** @wixFieldType text */
+  receiverId?: string;
+  /** @wixFieldType text */
+  status?: string;
+  /** @wixFieldType datetime */
+  requestTimestamp?: Date | string;
+  /** @wixFieldType text */
+  message?: string;
+}
+
+
+/**
  * Collection ID: interfacepreviews
  * Interface for InterfacePreviews
  */
@@ -126,6 +147,10 @@ export interface UserProfiles {
   _updatedDate?: Date;
   /** @wixFieldType boolean */
   receiveSecurityEmails?: boolean;
+  /** @wixFieldType text */
+  email?: string;
+  /** @wixFieldType text */
+  userId?: string;
   /** @wixFieldType text */
   username?: string;
   /** @wixFieldType text */

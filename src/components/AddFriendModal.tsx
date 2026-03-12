@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Plus, Search } from 'lucide-react';
+import { X, Plus, Search, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { BaseCrudService } from '@/integrations';
@@ -16,6 +16,7 @@ export default function AddFriendModal({
   onFriendAdded,
 }: AddFriendModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [allUsers, setAllUsers] = useState<UserProfiles[]>([]);
   const [searchResults, setSearchResults] = useState<UserProfiles[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<UserProfiles | null>(
@@ -26,31 +27,53 @@ export default function AddFriendModal({
   const [pinCode, setPinCode] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
+  const [currentUserId, setCurrentUserId] = useState('');
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
+  useEffect(() => {
+    // Get current user ID from session
+    const userSession = sessionStorage.getItem('currentUser');
+    if (userSession) {
+      const user = JSON.parse(userSession);
+      setCurrentUserId(user.userId);
     }
+    loadAllUsers();
+  }, []);
 
-    setIsSearching(true);
-    setError('');
+  const loadAllUsers = async () => {
     try {
+      setIsSearching(true);
       const result = await BaseCrudService.getAll<UserProfiles>(
-        'userprofiles'
+        'userprofiles',
+        [],
+        { limit: 1000 }
       );
+      // Filter out system user and current user
       const filtered = (result.items || []).filter(
-        (user) =>
-          user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
+        (user) => user.username !== 'xepx' && user.userId !== currentUserId
       );
+      setAllUsers(filtered);
       setSearchResults(filtered);
     } catch (err) {
-      setError('Failed to search users');
+      setError('Failed to load users');
       console.error(err);
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setSearchResults(allUsers);
+      return;
+    }
+
+    const filtered = allUsers.filter(
+      (user) =>
+        user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.userId?.includes(searchQuery)
+    );
+    setSearchResults(filtered);
   };
 
   const handleCreateChat = async () => {
@@ -72,7 +95,7 @@ export default function AddFriendModal({
         chatName: chatName.trim(),
         pinEnabled,
         pinCode: pinEnabled ? parseInt(pinCode) : undefined,
-        participantIdentifiers: `current-user,${selectedFriend._id}`,
+        participantIdentifiers: `${currentUserId},${selectedFriend.userId}`,
         lastActivityDate: new Date(),
         isGroupChat: false,
       };
@@ -155,16 +178,16 @@ export default function AddFriendModal({
                         <p className="font-heading text-sm text-primary">
                           {user.displayName}
                         </p>
-                        <p className="text-xs text-secondary">@{user.username}</p>
+                        <p className="text-xs text-secondary">@{user.username} • ID: {user.userId}</p>
                       </motion.button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {searchResults.length === 0 && searchQuery && !isSearching && (
+              {searchResults.length === 0 && !isSearching && (
                 <p className="text-sm text-secondary text-center py-4">
-                  No users found
+                  {searchQuery ? 'No users found' : 'All registered users shown above'}
                 </p>
               )}
             </div>

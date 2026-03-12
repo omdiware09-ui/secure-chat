@@ -40,8 +40,9 @@ export default function LoginPage() {
       // Authenticate user with proper password validation
       const user = await authService.loginUser(formData.userId, formData.password);
       
-      // Store user session
-      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      // Store user session with name
+      const userWithName = { ...user, name: user.email?.split('@')[0] || 'User' };
+      sessionStorage.setItem('currentUser', JSON.stringify(userWithName));
       sessionStorage.setItem('userEmail', user.email);
       
       setSuccessMessage('Login successful! Redirecting...');

@@ -70,6 +70,13 @@ export default function VaultPinPage() {
       if (currentUser) {
         await authService.verifyVaultPin(currentUser.userId, pin);
         
+        // Send welcome message if first time
+        const hasSeenWelcome = sessionStorage.getItem(`welcome_${currentUser.userId}`);
+        if (!hasSeenWelcome) {
+          await authService.sendWelcomeMessage(currentUser.userId, currentUser.name || 'User');
+          sessionStorage.setItem(`welcome_${currentUser.userId}`, 'true');
+        }
+        
         // On success, navigate to chat interface
         // Store vault unlock time for session management
         sessionStorage.setItem('vaultUnlocked', new Date().toISOString());

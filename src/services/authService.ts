@@ -1,4 +1,5 @@
 import { BaseCrudService } from '@/integrations';
+import { UserProfiles, Chats, Messages } from '@/entities';
 
 interface AuthUser {
   _id: string;
@@ -60,6 +61,22 @@ export const authService = {
     // In production, save to database
     // For now, store in localStorage for demo
     localStorage.setItem(`user_${email}`, JSON.stringify(user));
+
+    // Create user profile in CMS
+    try {
+      const userProfile: UserProfiles = {
+        _id: crypto.randomUUID(),
+        userId,
+        email,
+        displayName: name,
+        username: name.toLowerCase().replace(/\s+/g, '_'),
+        isSearchable: true,
+        receiveSecurityEmails: true,
+      };
+      await BaseCrudService.create('userprofiles', userProfile);
+    } catch (err) {
+      console.error('Failed to create user profile:', err);
+    }
 
     return { userId, vaultPin, user };
   },
@@ -154,5 +171,54 @@ export const authService = {
     }
 
     return true;
+  },
+
+  async sendWelcomeMessage(userId: string, userName: string) {
+    try {
+      // Find or create system user "xepx"
+      const systemUsers = await BaseCrudService.getAll<UserProfiles>('userprofiles', [], { limit: 1000 });
+      let xepxUser = (systemUsers.items || []).find(u => u.username === 'xepx');
+      
+      if (!xepxUser) {
+        // Create system user if doesn't exist
+        xepxUser = {
+          _id: crypto.randomUUID(),
+          userId: '000000',
+          email: 'system@xepx.io',
+          displayName: 'xepx',
+          username: 'xepx',
+          isSearchable: false,
+        };
+        await BaseCrudService.create('userprofiles', xepxUser);
+      }
+
+      // Create welcome chat
+      const welcomeChat: Chats = {
+        _id: crypto.randomUUID(),
+        chatName: `Welcome from xepx`,
+        pinEnabled: false,
+        participantIdentifiers: `${xepxUser._id},${userId}`,
+        lastActivityDate: new Date(),
+        isGroupChat: false,
+      };
+      await BaseCrudService.create('chats', welcomeChat);
+
+      // Send welcome message
+      const welcomeMessage: Messages = {
+        _id: crypto.randomUUID(),
+        chatId: welcomeChat._id,
+        senderId: xepxUser._id,
+        encryptedContent: btoa(`Welcome to xepx, ${userName}! 🔐\n\nI'm om, your guide here. This is your secure sanctuary for private conversations.\n\nKey features:\n✓ End-to-end encryption\n✓ Vault PIN protection\n✓ Self-destructing messages\n✓ Zero browser storage\n\nFeel free to reach out if you need help!\n\n- om`),
+        timestamp: new Date(),
+        isRead: false,
+        isDecrypted: false,
+      };
+      await BaseCrudService.create('messages', welcomeMessage);
+
+      return true;
+    } catch (err) {
+      console.error('Failed to send welcome message:', err);
+      return false;
+    }
   },
 };

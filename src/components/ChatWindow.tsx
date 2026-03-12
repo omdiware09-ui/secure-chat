@@ -67,10 +67,14 @@ export default function ChatWindow({
       // Simple encryption (in production, use proper encryption)
       const encryptedContent = btoa(newMessage);
 
+      // Get current user ID from session
+      const userSession = sessionStorage.getItem('currentUser');
+      const currentUserId = userSession ? JSON.parse(userSession).userId : 'current-user';
+
       const message: Messages = {
         _id: crypto.randomUUID(),
         chatId: chat._id,
-        senderId: 'current-user', // In real app, get from auth
+        senderId: currentUserId,
         encryptedContent,
         timestamp: new Date(),
         isRead: false,
