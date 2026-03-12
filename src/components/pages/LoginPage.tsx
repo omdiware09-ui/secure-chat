@@ -24,8 +24,8 @@ export default function LoginPage() {
     setError('');
     setSuccessMessage('');
 
-    if (formData.userId.length !== 6 || !/^\d+$/.test(formData.userId)) {
-      setError('User ID must be a 6-digit number');
+    if (formData.userId.length < 3) {
+      setError('User ID must be at least 3 characters');
       return;
     }
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+             <div>
               <Label htmlFor="userId" className="text-foreground mb-2 flex items-center gap-2">
                 <Hash className="w-4 h-4" strokeWidth={1.5} />
                 User ID
@@ -91,14 +91,13 @@ export default function LoginPage() {
                 id="userId"
                 type="text"
                 value={formData.userId}
-                onChange={(e) => setFormData({ ...formData, userId: e.target.value.replace(/\D/g, '').slice(0, 6) })}
+                onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
                 required
-                maxLength={6}
-                className="bg-background border-secondary/30 text-foreground focus:border-accent font-heading text-2xl tracking-wider text-center"
-                placeholder="000000"
+                className="bg-background border-secondary/30 text-foreground focus:border-accent"
+                placeholder="Enter your User ID"
               />
               <p className="text-xs text-secondary mt-2">
-                Your unique 6-digit User ID provided during registration
+                Your unique User ID provided during registration
               </p>
             </div>
 

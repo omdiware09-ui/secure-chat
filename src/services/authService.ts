@@ -36,14 +36,32 @@ export const generateVaultPin = (): string => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
-// Generate 6-digit user ID
-export const generateUserId = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
 export const authService = {
-  async createUser(email: string, password: string, name: string) {
-    const userId = generateUserId();
+  async checkUserIdAvailability(userId: string): Promise<boolean> {
+    // Check if user ID already exists in localStorage
+    const users = Object.values(localStorage).filter((item) => {
+      try {
+        const user = JSON.parse(item as string);
+        return user.userId === userId;
+      } catch {
+        return false;
+      }
+    });
+    return users.length === 0; // Return true if available (not found)
+  },
+
+  async createUser(email: string, password: string, name: string, userId: string) {
+    // Validate user ID format
+    if (!userId || userId.length < 3) {
+      throw new Error('User ID must be at least 3 characters');
+    }
+
+    // Check if user ID is available
+    const isAvailable = await this.checkUserIdAvailability(userId);
+    if (!isAvailable) {
+      throw new Error('This User ID is already taken. Please choose another one.');
+    }
+
     const vaultPin = generateVaultPin();
     const passwordHash = hashPassword(password);
 

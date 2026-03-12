@@ -16,11 +16,14 @@ export default function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    userId: '',
   });
   const [generatedUserId, setGeneratedUserId] = useState('');
   const [generatedVaultPin, setGeneratedVaultPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [userIdAvailable, setUserIdAvailable] = useState<boolean | null>(null);
+  const [checkingUserId, setCheckingUserId] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +31,21 @@ export default function SignupPage() {
 
     if (!formData.name.trim()) {
       setError('Full name is required');
+      return;
+    }
+
+    if (!formData.userId.trim()) {
+      setError('User ID is required');
+      return;
+    }
+
+    if (formData.userId.length < 3) {
+      setError('User ID must be at least 3 characters');
+      return;
+    }
+
+    if (!userIdAvailable) {
+      setError('Please check if your User ID is available first');
       return;
     }
 
@@ -49,11 +67,12 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      // Create user account with proper security
+      // Create user account with user-provided user ID
       const result = await authService.createUser(
         formData.email,
         formData.password,
-        formData.name
+        formData.name,
+        formData.userId
       );
 
       setGeneratedUserId(result.userId);
@@ -69,6 +88,33 @@ export default function SignupPage() {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCheckUserId = async () => {
+    if (!formData.userId.trim()) {
+      setError('Please enter a User ID first');
+      return;
+    }
+
+    if (formData.userId.length < 3) {
+      setError('User ID must be at least 3 characters');
+      return;
+    }
+
+    setCheckingUserId(true);
+    setError('');
+
+    try {
+      const isAvailable = await authService.checkUserIdAvailability(formData.userId);
+      setUserIdAvailable(isAvailable);
+      if (!isAvailable) {
+        setError('This User ID is already taken. Please choose another one.');
+      }
+    } catch (err) {
+      setError('Failed to check User ID availability');
+    } finally {
+      setCheckingUserId(false);
     }
   };
 
@@ -130,7 +176,7 @@ export default function SignupPage() {
 
               {/* Security Information */}
               <div className="p-4 border border-secondary/20 bg-background mb-6">
-                <h3 className="font-heading text-sm text-primary mb-3">Important Security Information</h3>
+               <h3 className="font-heading text-sm text-primary mb-3">Important Security Information</h3>
                 <ul className="space-y-2 text-xs text-foreground">
                   <li>✓ User ID: Use this to log in</li>
                   <li>✓ Vault PIN: Required to access your chats</li>
@@ -193,6 +239,44 @@ export default function SignupPage() {
                 className="bg-background border-secondary/30 text-foreground focus:border-accent"
                 placeholder="Enter your full name"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="userId" className="text-foreground mb-2 flex items-center gap-2">
+                <User className="w-4 h-4" strokeWidth={1.5} />
+                Choose Your User ID
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="userId"
+                  type="text"
+                  value={formData.userId}
+                  onChange={(e) => {
+                    setFormData({ ...formData, userId: e.target.value });
+                    setUserIdAvailable(null);
+                  }}
+                  required
+                  className="bg-background border-secondary/30 text-foreground focus:border-accent flex-1"
+                  placeholder="Choose a unique User ID (min 3 characters)"
+                />
+                <Button
+                  type="button"
+                  onClick={handleCheckUserId}
+                  disabled={checkingUserId || !formData.userId.trim()}
+                  className="bg-accent text-accent-foreground px-6 hover:opacity-90 disabled:opacity-50"
+                >
+                  {checkingUserId ? 'Checking...' : 'Check'}
+                </Button>
+              </div>
+              <p className="text-xs text-secondary mt-2">
+                Your User ID is unique and used to log in. You cannot change it later.
+              </p>
+              {userIdAvailable === true && (
+                <p className="text-xs text-accent mt-2">✓ This User ID is available!</p>
+              )}
+              {userIdAvailable === false && (
+                <p className="text-xs text-destructive mt-2">✗ This User ID is already taken</p>
+              )}
             </div>
 
             <div>
@@ -259,13 +343,13 @@ export default function SignupPage() {
               <p className="text-xs text-foreground leading-relaxed">
                 By creating an account, you agree that your password will be securely hashed, 
                 and encryption keys will be generated for end-to-end encrypted messaging. 
-                You will receive a unique 6-digit User ID and 4-digit Vault PIN via email.
+                You will receive a unique Vault PIN via email.
               </p>
             </div>
 
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || userIdAvailable !== true}
               className="w-full bg-accent text-accent-foreground py-6 text-lg hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
