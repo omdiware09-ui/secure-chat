@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { MemberProvider } from '@/integrations';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom';
 import { ScrollToTop } from '@/lib/scroll-to-top';
+import { initializeScreenProtection } from '@/lib/screen-protection';
 import ErrorPage from '@/integrations/errorHandlers/ErrorPage';
 import HomePage from '@/components/pages/HomePage';
 import FeaturesPage from '@/components/pages/FeaturesPage';
@@ -13,6 +15,11 @@ import PrivacyPage from '@/components/pages/PrivacyPage';
 
 // Layout component that includes ScrollToTop
 function Layout() {
+  useEffect(() => {
+    // Initialize screen protection on app load
+    initializeScreenProtection();
+  }, []);
+
   return (
     <>
       <ScrollToTop />

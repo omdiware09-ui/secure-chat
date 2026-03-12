@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Mail, Lock, User, Key, CheckCircle } from 'lucide-react';
+import { Shield, Mail, Lock, User, Key, CheckCircle, Hash, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,11 +16,43 @@ export default function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    userId: '',
   });
   const [generatedUserId, setGeneratedUserId] = useState('');
   const [generatedVaultPin, setGeneratedVaultPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [userIdError, setUserIdError] = useState('');
+  const [isCheckingUserId, setIsCheckingUserId] = useState(false);
+
+  const handleCheckUserId = async () => {
+    if (!formData.userId.trim()) {
+      setUserIdError('User ID is required');
+      return;
+    }
+
+    if (formData.userId.length < 6) {
+      setUserIdError('User ID must be at least 6 characters');
+      return;
+    }
+
+    setIsCheckingUserId(true);
+    setUserIdError('');
+
+    try {
+      const isAvailable = await authService.checkUserIdAvailability(formData.userId);
+      if (!isAvailable) {
+        setUserIdError('This User ID is already taken. Please choose a different one.');
+        setFormData({ ...formData, userId: '' });
+      } else {
+        setUserIdError(''); // Clear error if available
+      }
+    } catch (err) {
+      setUserIdError('Error checking User ID availability. Please try again.');
+    } finally {
+      setIsCheckingUserId(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +65,11 @@ export default function SignupPage() {
 
     if (!formData.email.includes('@')) {
       setError('Valid email address is required');
+      return;
+    }
+
+    if (!formData.userId.trim()) {
+      setError('User ID is required');
       return;
     }
 
@@ -49,11 +86,12 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      // Create user account with auto-generated unique user ID
-      const result = await authService.createUser(
+      // Create user account with user-provided user ID
+      const result = await authService.createUserWithCustomId(
         formData.email,
         formData.password,
-        formData.name
+        formData.name,
+        formData.userId
       );
 
       setGeneratedUserId(result.userId);
@@ -215,6 +253,58 @@ export default function SignupPage() {
             </div>
 
             <div>
+              <Label htmlFor="userId" className="text-foreground mb-2 flex items-center gap-2">
+                <Hash className="w-4 h-4" strokeWidth={1.5} />
+                User ID
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="userId"
+                  type="text"
+                  value={formData.userId}
+                  onChange={(e) => {
+                    setFormData({ ...formData, userId: e.target.value });
+                    setUserIdError('');
+                  }}
+                  required
+                  className="bg-background border-secondary/30 text-foreground focus:border-accent flex-1"
+                  placeholder="Choose a unique user ID (min 6 characters)"
+                />
+                <Button
+                  type="button"
+                  onClick={handleCheckUserId}
+                  disabled={isCheckingUserId || !formData.userId.trim()}
+                  className="bg-accent text-accent-foreground hover:opacity-90 px-4"
+                >
+                  {isCheckingUserId ? 'Checking...' : 'Check'}
+                </Button>
+              </div>
+              <p className="text-xs text-secondary mt-2">
+                Create a unique ID to identify yourself. Must be at least 6 characters.
+              </p>
+              {userIdError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 p-3 border border-destructive/30 bg-destructive/10 rounded flex gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                  <p className="text-xs text-destructive">{userIdError}</p>
+                </motion.div>
+              )}
+              {formData.userId && !userIdError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 p-3 border border-accent/30 bg-accent/10 rounded flex gap-2"
+                >
+                  <Check className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" strokeWidth={1.5} />
+                  <p className="text-xs text-accent">User ID is available!</p>
+                </motion.div>
+              )}
+            </div>
+
+            <div>
               <Label htmlFor="password" className="text-foreground mb-2 flex items-center gap-2">
                 <Lock className="w-4 h-4" strokeWidth={1.5} />
                 Password
@@ -265,7 +355,7 @@ export default function SignupPage() {
 
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !formData.userId || !!userIdError}
               className="w-full bg-accent text-accent-foreground py-6 text-lg hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}

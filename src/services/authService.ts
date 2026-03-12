@@ -74,16 +74,24 @@ const validateUserIdFormat = (userId: string): boolean => {
 
 export const authService = {
   async checkUserIdAvailability(userId: string): Promise<boolean> {
-    // Check if user ID already exists in localStorage (case-sensitive for auto-generated IDs)
-    const users = Object.values(localStorage).filter((item) => {
-      try {
-        const user = JSON.parse(item as string);
-        return user.userId === userId;
-      } catch {
-        return false;
-      }
-    });
-    return users.length === 0; // Return true if available (not found)
+    // Check if user ID already exists in database
+    try {
+      const allUsers = await BaseCrudService.getAll<UserProfiles>('userprofiles', [], { limit: 10000 });
+      const exists = (allUsers.items || []).some(user => user.userId === userId);
+      return !exists; // Return true if available (not found)
+    } catch (err) {
+      console.error('Error checking user ID availability:', err);
+      // Fallback to localStorage check
+      const users = Object.values(localStorage).filter((item) => {
+        try {
+          const user = JSON.parse(item as string);
+          return user.userId === userId;
+        } catch {
+          return false;
+        }
+      });
+      return users.length === 0;
+    }
   },
 
   async createUser(email: string, password: string, name: string) {
@@ -101,6 +109,55 @@ export const authService = {
     
     if (!isAvailable) {
       throw new Error('Failed to generate unique User ID. Please try again.');
+    }
+
+    const vaultPin = generateVaultPin();
+    const passwordHash = hashPassword(password);
+
+    const user: AuthUser = {
+      _id: crypto.randomUUID(),
+      userId,
+      email,
+      passwordHash,
+      vaultPin,
+      createdDate: new Date(),
+      isLocked: false,
+      failedAttempts: 0,
+    };
+
+    // In production, save to database
+    // For now, store in localStorage for demo
+    localStorage.setItem(`user_${email}`, JSON.stringify(user));
+
+    // Create user profile in CMS
+    try {
+      const userProfile: UserProfiles = {
+        _id: crypto.randomUUID(),
+        userId,
+        email,
+        displayName: name,
+        username: name.toLowerCase().replace(/\s+/g, '_'),
+        isSearchable: true,
+        receiveSecurityEmails: true,
+      };
+      await BaseCrudService.create('userprofiles', userProfile);
+    } catch (err) {
+      console.error('Failed to create user profile:', err);
+    }
+
+    return { userId, vaultPin, user };
+  },
+
+  async createUserWithCustomId(email: string, password: string, name: string, userId: string) {
+    // Validate user ID format
+    if (!userId || userId.length < 6) {
+      throw new Error('User ID must be at least 6 characters');
+    }
+
+    // Check if user ID is available
+    const isAvailable = await this.checkUserIdAvailability(userId);
+    if (!isAvailable) {
+      throw new Error('This User ID is already taken. Please choose a different one.');
     }
 
     const vaultPin = generateVaultPin();
