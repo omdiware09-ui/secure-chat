@@ -36,25 +36,47 @@ export const generateVaultPin = (): string => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
-// Validate user ID format (Instagram-like: alphanumeric, underscores, periods)
+// Generate unique user ID with at least 5 alphabets, 1 symbol, and 2 digits
+export const generateUniqueUserId = (): string => {
+  const alphabets = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const symbols = ['_', '-', '.', '#'];
+  const digits = '0123456789';
+  
+  let userId = '';
+  
+  // Add 5 random alphabets
+  for (let i = 0; i < 5; i++) {
+    userId += alphabets.charAt(Math.floor(Math.random() * alphabets.length));
+  }
+  
+  // Add 1 random symbol
+  userId += symbols[Math.floor(Math.random() * symbols.length)];
+  
+  // Add 2 random digits
+  for (let i = 0; i < 2; i++) {
+    userId += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  
+  // Shuffle the userId to randomize positions
+  return userId.split('').sort(() => Math.random() - 0.5).join('');
+};
+
+// Validate user ID format (auto-generated: alphanumeric, symbols, digits)
 const validateUserIdFormat = (userId: string): boolean => {
-  const instagramLikePattern = /^[a-zA-Z0-9_.]+$/;
-  return instagramLikePattern.test(userId);
+  const pattern = /^[a-zA-Z0-9_\-.#]+$/;
+  const hasAlphabets = /[a-zA-Z]/.test(userId);
+  const hasSymbol = /[_\-.#]/.test(userId);
+  const hasDigits = /\d/.test(userId);
+  return pattern.test(userId) && hasAlphabets && hasSymbol && hasDigits;
 };
 
 export const authService = {
   async checkUserIdAvailability(userId: string): Promise<boolean> {
-    // Validate format first
-    if (!validateUserIdFormat(userId)) {
-      throw new Error('User ID can only contain letters, numbers, underscores, and periods');
-    }
-
-    // Check if user ID already exists in localStorage (case-insensitive)
-    const normalizedUserId = userId.toLowerCase();
+    // Check if user ID already exists in localStorage (case-sensitive for auto-generated IDs)
     const users = Object.values(localStorage).filter((item) => {
       try {
         const user = JSON.parse(item as string);
-        return user.userId.toLowerCase() === normalizedUserId;
+        return user.userId === userId;
       } catch {
         return false;
       }
@@ -62,24 +84,21 @@ export const authService = {
     return users.length === 0; // Return true if available (not found)
   },
 
-  async createUser(email: string, password: string, name: string, userId: string) {
-    // Validate user ID format
-    if (!userId || userId.length < 3) {
-      throw new Error('User ID must be at least 3 characters');
+  async createUser(email: string, password: string, name: string) {
+    // Generate unique user ID automatically
+    let userId = generateUniqueUserId();
+    let isAvailable = await this.checkUserIdAvailability(userId);
+    
+    // Keep generating until we get a unique one
+    let attempts = 0;
+    while (!isAvailable && attempts < 10) {
+      userId = generateUniqueUserId();
+      isAvailable = await this.checkUserIdAvailability(userId);
+      attempts++;
     }
-
-    if (userId.length > 30) {
-      throw new Error('User ID must be no more than 30 characters');
-    }
-
-    if (!validateUserIdFormat(userId)) {
-      throw new Error('User ID can only contain letters, numbers, underscores, and periods');
-    }
-
-    // Check if user ID is available
-    const isAvailable = await this.checkUserIdAvailability(userId);
+    
     if (!isAvailable) {
-      throw new Error('This User ID is already taken. Please choose another one.');
+      throw new Error('Failed to generate unique User ID. Please try again.');
     }
 
     const vaultPin = generateVaultPin();
@@ -120,12 +139,11 @@ export const authService = {
   },
 
   async loginUser(userId: string, password: string) {
-    // Find user by userId (case-insensitive)
-    const normalizedUserId = userId.toLowerCase();
+    // Find user by userId (case-sensitive for auto-generated IDs)
     const users = Object.values(localStorage).filter((item) => {
       try {
         const user = JSON.parse(item as string);
-        return user.userId.toLowerCase() === normalizedUserId;
+        return user.userId === userId;
       } catch {
         return false;
       }
@@ -183,12 +201,11 @@ export const authService = {
   },
 
   async getUserByUserId(userId: string) {
-    // Find user by userId (case-insensitive)
-    const normalizedUserId = userId.toLowerCase();
+    // Find user by userId (case-sensitive for auto-generated IDs)
     const users = Object.values(localStorage).filter((item) => {
       try {
         const user = JSON.parse(item as string);
-        return user.userId.toLowerCase() === normalizedUserId;
+        return user.userId === userId;
       } catch {
         return false;
       }

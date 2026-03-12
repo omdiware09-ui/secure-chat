@@ -24,8 +24,8 @@ export default function LoginPage() {
     setError('');
     setSuccessMessage('');
 
-    if (formData.userId.length < 3) {
-      setError('User ID must be at least 3 characters');
+    if (!formData.userId.trim()) {
+      setError('User ID is required');
       return;
     }
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-             <div>
+            <div>
               <Label htmlFor="userId" className="text-foreground mb-2 flex items-center gap-2">
                 <Hash className="w-4 h-4" strokeWidth={1.5} />
                 User ID

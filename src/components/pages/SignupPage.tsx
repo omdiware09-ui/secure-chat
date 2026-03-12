@@ -16,14 +16,11 @@ export default function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    userId: '',
   });
   const [generatedUserId, setGeneratedUserId] = useState('');
   const [generatedVaultPin, setGeneratedVaultPin] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [userIdAvailable, setUserIdAvailable] = useState<boolean | null>(null);
-  const [checkingUserId, setCheckingUserId] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,32 +28,6 @@ export default function SignupPage() {
 
     if (!formData.name.trim()) {
       setError('Full name is required');
-      return;
-    }
-
-    if (!formData.userId.trim()) {
-      setError('User ID is required');
-      return;
-    }
-
-    if (formData.userId.length < 3) {
-      setError('User ID must be at least 3 characters');
-      return;
-    }
-
-    if (formData.userId.length > 30) {
-      setError('User ID must be no more than 30 characters');
-      return;
-    }
-
-    const instagramLikePattern = /^[a-zA-Z0-9_.]+$/;
-    if (!instagramLikePattern.test(formData.userId)) {
-      setError('User ID can only contain letters, numbers, underscores, and periods');
-      return;
-    }
-
-    if (!userIdAvailable) {
-      setError('Please check if your User ID is available first');
       return;
     }
 
@@ -78,12 +49,11 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      // Create user account with user-provided user ID
+      // Create user account with auto-generated unique user ID
       const result = await authService.createUser(
         formData.email,
         formData.password,
-        formData.name,
-        formData.userId
+        formData.name
       );
 
       setGeneratedUserId(result.userId);
@@ -99,44 +69,6 @@ export default function SignupPage() {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
       setIsSubmitting(false);
-    }
-  };
-
-  const handleCheckUserId = async () => {
-    if (!formData.userId.trim()) {
-      setError('Please enter a User ID first');
-      return;
-    }
-
-    if (formData.userId.length < 3) {
-      setError('User ID must be at least 3 characters');
-      return;
-    }
-
-    if (formData.userId.length > 30) {
-      setError('User ID must be no more than 30 characters');
-      return;
-    }
-
-    const instagramLikePattern = /^[a-zA-Z0-9_.]+$/;
-    if (!instagramLikePattern.test(formData.userId)) {
-      setError('User ID can only contain letters, numbers, underscores, and periods');
-      return;
-    }
-
-    setCheckingUserId(true);
-    setError('');
-
-    try {
-      const isAvailable = await authService.checkUserIdAvailability(formData.userId);
-      setUserIdAvailable(isAvailable);
-      if (!isAvailable) {
-        setError('This User ID is already taken. Please choose another one.');
-      }
-    } catch (err) {
-      setError('Failed to check User ID availability');
-    } finally {
-      setCheckingUserId(false);
     }
   };
 
@@ -264,44 +196,6 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <Label htmlFor="userId" className="text-foreground mb-2 flex items-center gap-2">
-                <User className="w-4 h-4" strokeWidth={1.5} />
-                Choose Your User ID
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="userId"
-                  type="text"
-                  value={formData.userId}
-                  onChange={(e) => {
-                    setFormData({ ...formData, userId: e.target.value });
-                    setUserIdAvailable(null);
-                  }}
-                  required
-                  className="bg-background border-secondary/30 text-foreground focus:border-accent flex-1"
-                  placeholder="Choose a unique User ID (min 3 characters)"
-                />
-                <Button
-                  type="button"
-                  onClick={handleCheckUserId}
-                  disabled={checkingUserId || !formData.userId.trim()}
-                  className="bg-accent text-accent-foreground px-6 hover:opacity-90 disabled:opacity-50"
-                >
-                  {checkingUserId ? 'Checking...' : 'Check'}
-                </Button>
-              </div>
-              <p className="text-xs text-secondary mt-2">
-                Your User ID is unique and used to log in. You cannot change it later. Use letters, numbers, underscores, and periods only (3-30 characters).
-              </p>
-              {userIdAvailable === true && (
-                <p className="text-xs text-accent mt-2">✓ This User ID is available!</p>
-              )}
-              {userIdAvailable === false && (
-                <p className="text-xs text-destructive mt-2">✗ This User ID is already taken</p>
-              )}
-            </div>
-
-            <div>
               <Label htmlFor="email" className="text-foreground mb-2 flex items-center gap-2">
                 <Mail className="w-4 h-4" strokeWidth={1.5} />
                 Email Address
@@ -371,7 +265,7 @@ export default function SignupPage() {
 
             <Button
               type="submit"
-              disabled={isSubmitting || userIdAvailable !== true}
+              disabled={isSubmitting}
               className="w-full bg-accent text-accent-foreground py-6 text-lg hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? 'Creating Account...' : 'Create Account'}
